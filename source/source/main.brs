@@ -1,4 +1,3 @@
-
 sub Main()
     screen = CreateObject("roSGScreen")
     m.port = CreateObject("roMessagePort")
@@ -18,15 +17,8 @@ sub Main()
         m.global.Model = 1
     end if
     
-    if m.global.loggedIn = true
-        scene = screen.CreateScene("HomeScene")
-        screen.show()
-        
-        m.RowList = scene.findNode("RowList")
-        m.RowList.observeField("rowItemSelected", m.port)
-        
-        m.Video = scene.findNode("Video")
-    end if
+    scene = screen.CreateScene("WelcomeScene")
+    screen.show()
 
     while(true)
        msg = wait(0, m.port)

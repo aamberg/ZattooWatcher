@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<component name="WelcomeScene" extends="Scene">
+	<script type="text/brightscript" uri="pkg:/components/WelcomeScene.brs"/>
+
+	<children>
+		<!-- Background -->
+		<Rectangle
+			id="Background"
+			width="1920"
+			height="1080"
+			color="0xD0CDC4FF">
+		</Rectangle>
+
+		<!-- Clock display (top center) -->
+		<MultiStyleLabel
+			id="ClockLabel"
+			text=""
+			font="font:LargeBoldSystemFont"
+			size="[1920,40]"
+			color="0xFFFFFF"
+			horizontalAlignment="center"
+			verticalAlignment="center"
+			translation="[850,250]">
+		</MultiStyleLabel>
+
+		<!-- Login status indicator (top right) -->
+		<Group id="LoginStatusGroup" translation="[1600,40]" translationFocus="[1600,40]">
+			<Rectangle
+				id="LoginStatusCircle"
+				width="24"
+				height="24"
+				color="0xFF0000FF"> <!-- Default red = not logged in -->
+			</Rectangle>
+
+			<Label
+				id="LoginStatusLabel"
+				text="Not logged in"
+				font="font:SmallBoldSystemFont"
+				size="[16,24]"
+				color="0xFFFFFF"
+				horizontalAlignment="left"
+				translation="[35,0]">
+			</Label>
+		</Group>
+
+		<!-- Navigation buttons container (bottom center) -->
+		<Group id="ButtonsContainer" translation="[780,600]" translationFocus="[780,600]">
+			<Button
+				id="LiveStreamingBtn"
+				text="Live Streaming"
+				font="font:LargeBoldSystemFont"
+				size="[420,60]"
+				color="0xFFFFFF"
+				focusRectColor="0x3399FF"
+				horizontalAlignment="center">
+			</Button>
+
+			<Button
+				id="SettingsBtn"
+				text="Settings"
+				font="font:LargeBoldSystemFont"
+				size="[420,60]"
+				color="0xFFFFFF"
+				focusRectColor="0x3399FF"
+				horizontalAlignment="center"
+				translation="[0,80]">
+			</Button>
+		</Group>
+
+		<!-- Timer for clock updates -->
+		<Timer
+			id="ClockTimer"
+			repeat="true"
+			duration="1"> <!-- Update every second -->
+		</Timer>
+	</children>
+</component>
