@@ -1,0 +1,20 @@
+#
+#  Copyright (c) 2016 Roku, Inc. All rights reserved.
+#  Roku Channel Manifest File
+#  Full spec at bit.ly/roku-manifest-file
+#
+
+# Channel Details
+title=ZattooWatcher
+major_version=1
+minor_version=0
+build_version=245
+
+# Channel Assets
+mm_icon_focus_hd=pkg:/images/Poster.png
+splash_screen_fhd=pkg:/images/Splash_Background.jpg
+splash_color=#808080
+splash_min_time=1
+
+# Resolution
+ui_resolutions=fhd

@@ -1,0 +1,11 @@
+
+.buildpath
+.project
+images/.DS_Store
+source/out/*
+source/dist/*
+.DS_Store
+.vscode
+.env
+.agent
+out
