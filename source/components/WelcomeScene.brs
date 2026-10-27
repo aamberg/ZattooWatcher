@@ -8,8 +8,8 @@ Sub init()
     
     m.ClockLabel.drawingStyles = {
         "default": {
-            "fontSize":96
-            "color": "#000000"
+            "fontSize":124
+            "color": "#36322E"
         }
     }
 
