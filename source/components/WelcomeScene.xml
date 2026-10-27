@@ -18,10 +18,10 @@
 			text=""
 			font="font:LargeBoldSystemFont"
 			size="[1920,40]"
-			color="0xFFFFFF"
+			color="0x36322E"
 			horizontalAlignment="center"
 			verticalAlignment="center"
-			translation="[850,250]">
+			translation="[805,250]">
 		</MultiStyleLabel>
 
 		<!-- Login status indicator (top right) -->
@@ -38,7 +38,7 @@
 				text="Not logged in"
 				font="font:SmallBoldSystemFont"
 				size="[16,24]"
-				color="0xFFFFFF"
+				color="0x36322E"
 				horizontalAlignment="left"
 				translation="[35,0]">
 			</Label>
