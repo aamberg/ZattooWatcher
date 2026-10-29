@@ -8,7 +8,10 @@ sub init() as Void
   
   m.defaultHeaders = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36",
-    "Accept": "application/json"
+    "Accept": "application/json",
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.zattoo.com/client"
   }
   
   m.timeoutMs = 15000
@@ -476,24 +479,22 @@ function loginAccount(email as String, password as String) as Object
   
 end function
 
-function getChannelList(params as Object) as Object
-  ' work in progress: 
-  url = "https://www.zattoo.com/zapi/v3/channels"
-  
-  if params <> invalid and type(params) = "roAssociativeArray" then
-    queryString = ""
-    for each key in params
-      ' url encode whole url in makeRequest. If that does not work, we can encode params individually here.
-      queryString += "&" + key + "=" + params[key]
-    end for
-    
-    url = url + "?" + Mid(queryString, 2)
-  end if
-  
+function getChannelList() as Object
+  url = "https://zattoo.com/zapi/v2/cached/channels/" + m.powerGuideHash + "?details=False"
   result = m.makeRequestWithRetry(url, "GET", invalid, invalid)
   
   if result.success then
-    return { success: true, channels: result.content }
+    jsonResponse = ParseJson(result.content)
+
+    if type(jsonResponse) = "roAssociativeArray" and jsonResponse.success = true then
+      print "> HttpManager: channel list fetched successfully"
+
+      return { success: true, channels: jsonResponse.channel_groups }
+    else
+      return { success: false, error: "Invalid channel list response", code: result.code }
+    end if
+
+    
   else
     return result
   end if
@@ -501,13 +502,24 @@ function getChannelList(params as Object) as Object
 end function
 
 function resolveStreamUrl(channelId as String) as Object
-  ' work in progress: 
-  url = "https://www.zattoo.com/zapi/v3/stream/" + channelId
+  url = "https://zattoo.com/zapi/watch" + channelId
   
-  result = m.makeRequestWithRetry(url, "GET", invalid, invalid)
+  ' hls7 currently set as default. (maybe only hls7 is supported on roku?)
+  body = { https_watch_urls: true, stream_type: "hls7", cid: channelId }
+  
+  result = m.makeRequestWithRetry(url, "POST", body, invalid)
   
   if result.success then
-    return { success: true, streamUrl: result.content }
+    jsonResponse = ParseJson(result.content)
+
+    if type(jsonResponse) = "roAssociativeArray" and jsonResponse.success = true then
+      print "> HttpManager: channel urls resolved successfully"
+
+      ' Note: jsonResponse.url is also available, sometiomes with hd stream. Maybe merge both urls and pick the best one? For now, just return watch_urls.
+      return { success: true, watchUrls: jsonResponse.watch_urls }
+    else
+      return { success: false, error: "Invalid channel urls response", code: result.code }
+    end if
   else
     return result
   end if
