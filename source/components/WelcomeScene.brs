@@ -5,6 +5,16 @@ Sub init()
     m.LiveStreamingBtn = m.top.findNode("LiveStreamingBtn")
     m.SettingsBtn = m.top.findNode("SettingsBtn")
     m.ClockTimer = m.top.findNode("ClockTimer")
+
+    ' TEMPORARY TEST: Run token endpoint test on startup
+    m.TestTokenTask = m.top.findNode("TestTokenTask")
+    if m.TestTokenTask <> invalid then
+        print "> [TEST] Starting token endpoint test..."
+        m.TestTokenTask.control = "RUN"
+        ' Observe results
+        m.TestTokenTask.observeField("resultSuccess", "onTestResult")
+        m.TestTokenTask.observeField("resultError", "onTestResult")
+    end if
     
     m.ClockLabel.drawingStyles = {
         "default": {
@@ -61,4 +71,20 @@ End Function
 Function onSettingsPressed() As Void
     ' Navigate to Settings Scene
     m.top.browseTo("SettingsScene")
+End Function
+
+' TEMPORARY TEST: Handler for token endpoint test results
+Function onTestResult() As Void
+    if m.TestTokenTask <> invalid then
+        success = m.TestTokenTask.resultSuccess
+        error = m.TestTokenTask.resultError or ""
+        responseTime = m.TestTokenTask.responseTimeMs
+
+        print "> [TEST] Test completed. Success: " + str(success)
+        if success = true then
+            print "> [TEST] Token endpoint works! Response time: " + str(responseTime) + "ms"
+        else
+            print "> [TEST] Error: " + error
+        end if
+    end if
 End Function
