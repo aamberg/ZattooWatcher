@@ -8,4 +8,5 @@ source/dist/*
 .vscode
 .env
 .agent
+.agents
 out

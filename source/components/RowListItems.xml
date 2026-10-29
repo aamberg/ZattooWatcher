@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <component name="RowListItems" extends="Group" xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd">
 	<interface>
+		<!-- bs:disable: 1067 functions are in CDATA -->
 		<field id = "itemContent" type = "node" onChange = "itemContentChanged" />
 		<field id = "height" type = "float" onChange= "updateLayout" />
 		<field id = "width" type = "float" onChange = "updateLayout" />
+		<!-- bs:enable: 1067 -->
 	</interface>
-
 	<script type = "text/brightscript">
 		<![CDATA[
 			Sub init()

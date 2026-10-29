@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- HttpManager: Central HTTP layer for Zattoo API communication -->
+<!-- Replaces UriFetcher with robust GET/POST, cookie handling, and session management -->
+
+<component name="HttpManager" extends="Node">
+
+  <interface>
+    <!-- Request methods -->
+    <field id="requestUrl" type="string"/>
+    <field id="requestMethod" type="string"/>
+    <field id="requestBody" type="string"/>
+    <field id="requestHeaders" type="string"/>
+    
+    <!-- Response fields -->
+    <field id="responseCode" type="int"/>
+    <field id="responseContent" type="string"/>
+    <field id="responseError" type="string"/>
+    <field id="responseSuccess" type="boolean"/>
+    
+    <!-- Control -->
+    <field id="control" type="string"/>
+    
+    <!-- Zattoo API convenience methods -->
+    <function name="GetToken"/>
+    <function name="CreateSession"/>
+    <function name="LoginAccount"/>
+    <function name="GetChannelList"/>
+    <function name="ResolveStreamUrl"/>
+  </interface>
+
+  <script type="text/brightscript" uri="pkg:/components/HttpManager.brs"/>
+
+</component>
