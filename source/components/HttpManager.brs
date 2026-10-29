@@ -24,8 +24,8 @@ sub init() as Void
   m.logoBaseUrl = "https://images.zattic.com/logos"
   m.imageBaseUrl = "https://images.zattic.com/cms"
 
-  m.loadCookies()
-  m.loadSession()
+  loadCookies()
+  loadSession()
   
 end sub
 
