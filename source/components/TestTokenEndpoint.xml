@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- TestTokenEndpoint: Temporary test task to verify HttpManager token endpoint -->
+<!-- Run this once on device, check console logs for results -->
+
+<component name="TestTokenEndpoint" extends="Task">
+  <interface>
+    <field id="resultSuccess" type="boolean"/>
+    <field id="resultToken" type="string"/>
+    <field id="resultCode" type="int"/>
+    <field id="resultError" type="string"/>
+    <field id="responseTimeMs" type="int"/>
+  </interface>
+
+  <script type="text/brightscript" uri="pkg:/components/TestTokenEndpoint.brs"/>
+</component>

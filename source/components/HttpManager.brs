@@ -2,8 +2,7 @@
 ' Supports GET/POST with cookies, session persistence, and retry logic
 
 sub init() as Void
-  m.port = CreateObject("roMessagePort")
-  
+  m.port = createObject("roMessagePort")
   m.cookies = {}
   
   m.defaultHeaders = {
@@ -44,9 +43,11 @@ function makeRequest(url as String, method as String, body as Object, headers as
   transfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
   transfer.InitClientCertificates()
   
-  transfer.SetTimeout(m.timeoutMs)
-  transfer.SetUrl(transfer.urlEncode(url))
-  
+  transfer.SetUrl(url)
+  transfer.SetPort(m.port)
+
+  print "> HttpManager: making request to '" + url + "'"
+  print "> HttpManager: method: " + method
   if m.defaultHeaders <> invalid then
     for each key in m.defaultHeaders
       transfer.AddHeader(key, m.defaultHeaders[key])
@@ -59,20 +60,20 @@ function makeRequest(url as String, method as String, body as Object, headers as
     end for
   end if
   
-  m.addCookiesToRequest(transfer, url)
+  addCookiesToRequest(transfer, url)
   
   result = invalid
   
   if method = "GET" then
-    result = transfer.AsyncGetToString(m.port)
+    result = transfer.AsyncGetToString()
   else if method = "POST" then
     if body <> invalid and type(body) = "roString" then
       transfer.AddHeader("Content-Type", "application/json")
-      result = transfer.AsyncPostFromString(m.port, body)
+      result = transfer.AsyncPostFromString(body)
     else if body <> invalid and type(body) = "roAssociativeArray" then
-      jsonBody = m.jsonToString(body)
+      jsonBody = FormatJson(body)
       transfer.AddHeader("Content-Type", "application/json")
-      result = transfer.AsyncPostFromString(m.port, jsonBody)
+      result = transfer.AsyncPostFromString(jsonBody)
     else
       return { success: false, error: "Invalid body for POST request" }
     end if
@@ -87,7 +88,7 @@ function makeRequest(url as String, method as String, body as Object, headers as
     return { success: false, error: errorMsg, code: responseCode }
   end if
   
-  msg = wait(5, m.port)
+  msg = wait(0, m.port)
   
   if type(msg) = "roUrlEvent" then
     responseCode = msg.GetResponseCode()
@@ -96,13 +97,13 @@ function makeRequest(url as String, method as String, body as Object, headers as
     print "> HttpManager: GET/POST '" + url + "' returned code " + str(responseCode)
     
     if responseCode >= 200 and responseCode < 300 then
-      m.parseSetCookieHeaders(msg, url)
-      m.saveCookies()
+      parseSetCookieHeaders(msg, url)
+      saveCookies()
     end if
     
     return { success: true, code: responseCode, content: content }
   else
-    print "> HttpManager: unexpected response type for request"
+    print "> HttpManager: unexpected response type for request: " + type(msg)
     return { success: false, error: "Unexpected response type", code: -1 }
   end if
   
@@ -116,7 +117,7 @@ function makeRequestWithRetry(url as String, method as String, body as Object, h
   lastError = ""
   
   for i = 1 to m.maxRetries
-    result = m.makeRequest(url, method, body, headers)
+    result = makeRequest(url, method, body, headers)
     
     if result.success then
       return result
@@ -218,14 +219,15 @@ function parseSetCookieHeaders(msg as Object, url as String) as Void
     return
   end if
   
-  domain = m.extractDomain(url)
+  domain = extractDomain(url)
   path = ""
   
   ' Get Set-Cookie header value(s) from the response
-  setCookieValue = msg.GetHeader("Set-Cookie")
+  responseHeaders = msg.GetResponseHeaders() 
+  setCookieValue = responseHeaders["Set-Cookie"]
   
   if type(setCookieValue) = "roString" and setCookieValue <> "" then
-    m.parseSingleSetCookie(setCookieValue, domain, path)
+    parseSingleSetCookie(setCookieValue, domain, path)
   end if
   
 end function
@@ -250,24 +252,24 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
   
   if parts.count() > 0 then
     ' First part is name=value
-    firstPart = m.trimLeft(m.trimRight(parts[0], " "), " ")
+    firstPart = trimLeft(trimRight(parts[0], " "), " ")
     equalsPos = Instr(firstPart, "=")
     
     if equalsPos > 0 then
-      name = m.trimLeft(m.trimRight(Mid(firstPart, 1, equalsPos - 1), " "), " ")
-      value = m.trimLeft(m.trimRight(Mid(firstPart, equalsPos + 1), " "), " ")
+      name = trimLeft(trimRight(Mid(firstPart, 1, equalsPos - 1), " "), " ")
+      value = trimLeft(trimRight(Mid(firstPart, equalsPos + 1), " "), " ")
     end if
     
     ' Parse remaining attributes
     for i = 2 to parts.count()
-      attr = m.trimLeft(m.trimRight(parts[i - 1], " "), " ").ToLower()
+      attr = trimLeft(trimRight(parts[i - 1], " "), " ").ToLower()
       
       if attr = "domain" or Left(attr, 9) = "domain=" then
         domainValue = Mid(attr, 8)
-        domain = m.trimLeft(m.trimRight(domainValue, " "), " ")
+        domain = trimLeft(trimRight(domainValue, " "), " ")
       else if attr = "path" or Left(attr, 6) = "path=" then
         pathValue = Mid(attr, 7)
-        path = m.trimLeft(m.trimRight(pathValue, " "), " ")
+        path = trimLeft(trimRight(pathValue, " "), " ")
       else if attr = "expires" or Left(attr, 9) = "expires=" then
         expires = Mid(attr, 10)
       else if attr = "max-age" or Left(attr, 8) = "max-age=" then
@@ -367,14 +369,14 @@ end function
 function getToken() as Object
   url = "https://www.zattoo.com/token.json"
   
-  result = m.makeRequestWithRetry(url, "GET", invalid, invalid)
+  result = makeRequestWithRetry(url, "GET", invalid, invalid)
   
   if result.success then
     jsonResponse = ParseJson(result.content)
     
-    if type(jsonResponse) = "roAssociativeArray" and type(jsonResponse.token) = "roString" then
-      m.token = jsonResponse.token
-      m.saveSession()
+    if type(jsonResponse) = "roAssociativeArray" and type(jsonResponse.session_token) = "String" then
+      m.token = jsonResponse.session_token
+      saveSession()
 
       print "> HttpManager: token fetched successfully"
       return { success: true, token: m.token }

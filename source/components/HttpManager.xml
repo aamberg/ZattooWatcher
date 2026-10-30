@@ -22,11 +22,11 @@
     <field id="control" type="string"/>
     
     <!-- Zattoo API convenience methods -->
-    <function name="GetToken"/>
-    <function name="CreateSession"/>
-    <function name="LoginAccount"/>
-    <function name="GetChannelList"/>
-    <function name="ResolveStreamUrl"/>
+    <function name="getToken"/>
+    <function name="createSession"/>
+    <function name="loginAccount"/>
+    <function name="getChannelList"/>
+    <function name="resolveStreamUrl"/>
   </interface>
 
   <script type="text/brightscript" uri="pkg:/components/HttpManager.brs"/>
