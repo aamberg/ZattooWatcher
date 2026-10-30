@@ -21,6 +21,7 @@ Sub init()
     m.ClockTimer.control = "start"
 
     ' Read auth state from global node and update indicator
+    ' testEndpoints()
     updateLoginStatus()
 
     ' Observe button presses for navigation
@@ -28,7 +29,8 @@ Sub init()
     m.SettingsBtn.observeField("pressed", "onSettingsPressed")
 End Sub
 
-function testTokenEndpoint() as Void
+function testEndpoints() as Void
+    ' currently, you have to set the functionName you want to test in the TestTokenEndpoint component
     m.TestTokenTask = m.top.findNode("TestTokenTask")
     if m.TestTokenTask <> invalid then
         print "> [TEST] Starting token endpoint test..."

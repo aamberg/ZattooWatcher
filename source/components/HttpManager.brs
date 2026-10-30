@@ -68,11 +68,14 @@ function makeRequest(url as String, method as String, body as Object, headers as
     result = transfer.AsyncGetToString()
   else if method = "POST" then
     if body <> invalid and type(body) = "roString" then
-      transfer.AddHeader("Content-Type", "application/json")
+      print "> HttpManager: making POST request with string body"
+      print "> HttpManager: body: " + body
       result = transfer.AsyncPostFromString(body)
     else if body <> invalid and type(body) = "roAssociativeArray" then
       jsonBody = FormatJson(body)
       transfer.AddHeader("Content-Type", "application/json")
+      print "> HttpManager: making POST request with JSON body"
+      print "> HttpManager: body: " + jsonBody
       result = transfer.AsyncPostFromString(jsonBody)
     else
       return { success: false, error: "Invalid body for POST request" }
@@ -186,7 +189,6 @@ end function
 '=============================================================================
 
 function addCookiesToRequest(transfer as Object, url as String) as Void
-  ' Simplified cookie handling - stores cookies by domain
   if m.cookies.count() = 0 then
     return
   end if
@@ -214,7 +216,6 @@ function addCookiesToRequest(transfer as Object, url as String) as Void
 end function
 
 function parseSetCookieHeaders(msg as Object, url as String) as Void
-  ' Parse Set-Cookie headers from response and store in cookie jar
   if msg = invalid then
     return
   end if
@@ -222,7 +223,6 @@ function parseSetCookieHeaders(msg as Object, url as String) as Void
   domain = extractDomain(url)
   path = ""
   
-  ' Get Set-Cookie header value(s) from the response
   responseHeaders = msg.GetResponseHeaders() 
   setCookieValue = responseHeaders["Set-Cookie"]
   
@@ -233,7 +233,6 @@ function parseSetCookieHeaders(msg as Object, url as String) as Void
 end function
 
 function parseSingleSetCookie(setCookieValue as String, defaultDomain as String, defaultPath as String) as Void
-  ' Parse a single Set-Cookie header value and store in cookie jar
   if setCookieValue = "" then
     return
   end if
@@ -247,11 +246,9 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
   secure = false
   httpOnly = false
   
-  ' Split by semicolon and parse each attribute
   parts = setCookieValue.Split(";")
   
   if parts.count() > 0 then
-    ' First part is name=value
     firstPart = trimLeft(trimRight(parts[0], " "), " ")
     equalsPos = Instr(firstPart, "=")
     
@@ -260,7 +257,6 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
       value = trimLeft(trimRight(Mid(firstPart, equalsPos + 1), " "), " ")
     end if
     
-    ' Parse remaining attributes
     for i = 2 to parts.count()
       attr = trimLeft(trimRight(parts[i - 1], " "), " ").ToLower()
       
@@ -282,7 +278,6 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
     next
   end if
   
-  ' Store cookie in jar: m.cookies[path][domain][name] = {value}
   if name <> "" and value <> "" then
     if m.cookies[path] = invalid then
       m.cookies[path] = {}
@@ -344,7 +339,6 @@ function clearSession() as Void
   m.token = ""
   m.powerGuideHash = ""
   
-  ' Remove persisted session file
   sessionFile = "cachefs:/zattooWatcher/session.json"
   cookieFile = "cachefs:/zattooWatcher/cookies.json"
   
@@ -391,22 +385,26 @@ function getToken() as Object
 end function
 
 function createSession() as Object
-  url = "https://www.zattoo.com/zapi/v3/session/hello"
-  uuid = m.generateUUIDv4()
+  transfer = CreateObject("roUrlTransfer")
+  url = "https://zattoo.com/zapi/v3/session/hello"
+  uuid = generateUUIDv4()
   
+  print "> HttpManager: create hello session with UUID: " + uuid
+  print "> HttpManager: using token: " + m.token
+
   ' todo: set lang in settings
-  body = { client_app_token: m.token, app_version: m.appVersion, format: "json", lang: "de", uuid: uuid }
+  body = "client_app_token=" + transfer.Escape(m.token) + "&app_version=" + transfer.Escape(m.appVersion) + "&format=json&lang=de&uuid=" + transfer.Escape(uuid)
   
-  result = m.makeRequestWithRetry(url, "POST", body, invalid)
+  result = makeRequestWithRetry(url, "POST", body, invalid)
   
   if result.success then
     jsonResponse = ParseJson(result.content)
     
     if type(jsonResponse) = "roAssociativeArray" and jsonResponse.active = true then
       print "> HttpManager: hello successfully"
-      return { success: true }
+      return { success: true, data: jsonResponse }
     else
-      return { success: false, error: "Invalid token response", code: result.code }
+      return { success: false, error: "Invalid createSession response", code: result.code }
     end if
 
   else
@@ -416,9 +414,10 @@ function createSession() as Object
 end function
 
 function loginAccount(email as String, password as String) as Object
-  url = "https://www.zattoo.com/zapi/v3/account/login"
+  transfer = CreateObject("roUrlTransfer")
+  url = "https://zattoo.com/zapi/v3/account/login"
   
-  body = { login: email, password: password, remember: true, format: "json" }
+  body = "login=" + transfer.Escape(email) + "&password=" + transfer.Escape(password) + "&remember=true&format=json"
   
   result = m.makeRequestWithRetry(url, "POST", body, invalid)
   
@@ -467,10 +466,11 @@ function getChannelList() as Object
 end function
 
 function resolveStreamUrl(channelId as String) as Object
-  url = "https://zattoo.com/zapi/watch" + channelId
+  transfer = CreateObject("roUrlTransfer")
+  url = "https://zattoo.com/zapi/watch"
   
   ' hls7 currently set as default. (maybe only hls7 is supported on roku?)
-  body = { https_watch_urls: true, stream_type: "hls7", cid: channelId }
+  body = "https_watch_urls=true&stream_type=hls7&cid=" + transfer.Escape(channelId)
   
   result = m.makeRequestWithRetry(url, "POST", body, invalid)
   
