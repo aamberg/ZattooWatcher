@@ -10,3 +10,4 @@ source/dist/*
 .agent
 .agents
 out
+source/mocks
