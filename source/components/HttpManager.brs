@@ -45,6 +45,7 @@ function makeRequest(url as String, method as String, body as Object, headers as
   
   transfer.SetUrl(url)
   transfer.SetPort(m.port)
+  transfer.EnableCookies()
 
   print "> HttpManager: making request to '" + url + "'"
   print "> HttpManager: method: " + method
@@ -100,6 +101,9 @@ function makeRequest(url as String, method as String, body as Object, headers as
     print "> HttpManager: GET/POST '" + url + "' returned code " + str(responseCode)
     
     if responseCode >= 200 and responseCode < 300 then
+      cookies = transfer.GetCookies("zattoo.com", "")
+      print "> HttpManager: Cookiesize for '" + url + "': " + str(cookies.count())
+
       parseSetCookieHeaders(msg, url)
       saveCookies()
     end if
@@ -151,37 +155,30 @@ end function
 '=============================================================================
 
 function loadCookies() as Void
-  cookieFile = "cachefs:/zattooWatcher/cookies.json"  
-  readFile = CreateObject("roFileSystem")
-  
-  if readFile.Exists(cookieFile) then
-    jsonString = ReadAsciiFile(cookieFile)
-    
-    if jsonString <> "" then
-      jsonData = ParseJson(jsonString)
-      
-      if type(jsonData) = "roAssociativeArray" then
-        m.cookies = jsonData
-        print "> HttpManager: loaded persisted cookies (" + str(m.cookies.count()) + " entries)"
-      end if
-      
-    end if
-  end if
+  registry = CreateObject("roRegistrySection", "Cookies")
+  cookieList = registry.GetKeyList()
+
+  for each name in cookieList
+    m.cookies[name] = registry.Read(name)
+  end for
+
+  print "> HttpManager: loaded persisted cookies (" + str(cookieList.count()) + " entries)"
 end function
 
 function saveCookies() as Void
-  cookieFile = "cachefs:/zattooWatcher/cookies.json"  
-  jsonString = FormatJson(m.cookies)
-  
-  if jsonString <> invalid then
-    success = WriteAsciiFile(cookieFile, jsonString)
-    if success then
-        print "> HttpManager: saved cookies to disk (" + cookieFile + ")"
-    else
-        print "> HttpManager: Error: Failed to write cookie file."
-    end if
-    
+  registry = CreateObject("roRegistrySection", "Cookies")
+
+  for each name in m.cookies
+    registry.Write(name, m.cookies[name])
+  end for
+
+  success = registry.Flush()
+  if success then
+      print "> HttpManager: saved cookies to registry"
+  else
+      print "> HttpManager: Error: Failed to write cookie registry."
   end if
+
 end function
 
 '=============================================================================
@@ -193,23 +190,15 @@ function addCookiesToRequest(transfer as Object, url as String) as Void
     return
   end if
   
-  domain = m.extractDomain(url)
-  
   cookieString = ""
   
-  for each path in m.cookies
-    for each domainKey in m.cookies[path]
-      if domainKey = domain or m.domainEndsWith(domain, domainKey) then
-        for each name in m.cookies[path][domainKey]
-          cookieValue = m.cookies[path][domainKey][name]
-          cookieString += name + "=" + cookieValue.value + "; "
-        end for
-      end if
-    end for
-  next
+  for each name in m.cookies
+    cookieValue = m.cookies[name]
+    cookieString += name + "=" + cookieValue + "; "
+  end for
   
   if cookieString <> "" then
-    cookieString = m.trimRight(cookieString, "; ")
+    cookieString = trimRight(cookieString, "; ")
     transfer.AddHeader("Cookie", cookieString)
   end if
   
@@ -221,18 +210,26 @@ function parseSetCookieHeaders(msg as Object, url as String) as Void
   end if
   
   domain = extractDomain(url)
-  path = ""
   
   responseHeaders = msg.GetResponseHeaders() 
+  for each key in responseHeaders
+    print "> HttpManager: header: " + key + " found"
+  end for
+
+  
+
   setCookieValue = responseHeaders["Set-Cookie"]
   
+  print "> HttpManager: parsing set-cookies - type: " + type(setCookieValue)
+
   if type(setCookieValue) = "roString" and setCookieValue <> "" then
-    parseSingleSetCookie(setCookieValue, domain, path)
+    print "> HttpManager: cookie string presented: " + setCookieValue
+    parseSingleSetCookie(setCookieValue, domain)
   end if
   
 end function
 
-function parseSingleSetCookie(setCookieValue as String, defaultDomain as String, defaultPath as String) as Void
+function parseSingleSetCookie(setCookieValue as String, defaultDomain as String) as Void
   if setCookieValue = "" then
     return
   end if
@@ -240,7 +237,7 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
   name = ""
   value = ""
   domain = defaultDomain
-  path = defaultPath
+  path = ""
   expires = ""
   maxAge = ""
   secure = false
@@ -257,6 +254,7 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
       value = trimLeft(trimRight(Mid(firstPart, equalsPos + 1), " "), " ")
     end if
     
+    ' lot of extra stuff, maybe for later use, but for now we just store the name/value pair
     for i = 2 to parts.count()
       attr = trimLeft(trimRight(parts[i - 1], " "), " ").ToLower()
       
@@ -279,16 +277,8 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String,
   end if
   
   if name <> "" and value <> "" then
-    if m.cookies[path] = invalid then
-      m.cookies[path] = {}
-    end if
-    
-    if m.cookies[path][domain] = invalid then
-      m.cookies[path][domain] = {}
-    end if
-    
-    m.cookies[path][domain][name] = { value: value, domain: domain, path: path }
-    print "> HttpManager: stored cookie '" + name + "' for domain '" + domain + "'"
+    m.cookies[name] = value
+    print "> HttpManager: stored cookie '" + name + "'"
   end if
   
 end function
@@ -298,39 +288,27 @@ end function
 '=============================================================================
 
 function loadSession() as Void
-  sessionFile = "cachefs:/zattooWatcher/session.json"  
-  readFile = CreateObject("roFileSystem")
-  
-  if readFile.Exists(sessionFile) then
-    jsonString = ReadAsciiFile(sessionFile)
-    
-    if jsonString <> "" then
-      jsonData = ParseJson(jsonString)
-      
-      if type(jsonData) = "roAssociativeArray" then
-        m.token = jsonData.token or ""
-        m.powerGuideHash = jsonData.powerGuideHash or ""
-        print "> HttpManager: loaded persisted session"
-      end if
-      
-    end if
-  end if  
+  registry = CreateObject("roRegistrySection", "Session")
+
+  if registry.Exists("deviceToken") then
+      m.token = registry.Read("deviceToken")
+  end if
+
+  if registry.Exists("powerGuideHash") then
+      m.powerGuideHash = registry.Read("powerGuideHash")
+  end if
+
+  print "> HttpManager: loaded persisted session from registry" 
+  print "> HttpManager: Token: " + m.token
+  print "> HttpManager: PowerGuideHash: " + m.powerGuideHash
 end function
 
 function saveSession() as Void
-  sessionFile = "cachefs:/zattooWatcher/session.json"
-  sessionData = { token: m.token, powerGuideHash: m.powerGuideHash }
-  jsonString = FormatJson(sessionData)
-  
-  if jsonString <> invalid then
-    success = WriteAsciiFile(sessionFile, jsonString)
-    if success then
-        print "> HttpManager: saved session to disk (" + sessionFile + ")"
-    else
-        print "> HttpManager: Error: Failed to write session file."
-    end if
-    
-  end if
+  registry = CreateObject("roRegistrySection", "Session")
+  registry.Write("deviceToken", m.token)
+  registry.Write("powerGuideHash", m.powerGuideHash)
+  registry.Flush()
+  print "> HttpManager: saved session to registry"
   
 end function
 
@@ -339,21 +317,26 @@ function clearSession() as Void
   m.token = ""
   m.powerGuideHash = ""
   
-  sessionFile = "cachefs:/zattooWatcher/session.json"
   cookieFile = "cachefs:/zattooWatcher/cookies.json"
   
   deleteFile = CreateObject("roFileSystem")
-
-  if deleteFile.Exists(sessionFile) then
-    deleteFile.Delete(sessionFile)
-    print "> HttpManager: cleared session from disk"
-  end if
   
   if deleteFile.Exists(cookieFile) then
     deleteFile.Delete(cookieFile)
     print "> HttpManager: cleared cookies from disk"
   end if
+
+  registrySession = CreateObject("roRegistrySection", "Session")
+
+  if registrySession.Exists("deviceToken") then
+      registrySession.Delete("deviceToken")
+  end if
+
+  if registrySession.Exists("powerGuideHash") then
+      registrySession.Delete("powerGuideHash")
+  end if
   
+  registrySession.Flush()
 end function
 
 '=============================================================================
@@ -391,6 +374,9 @@ function createSession() as Object
   
   print "> HttpManager: create hello session with UUID: " + uuid
   print "> HttpManager: using token: " + m.token
+
+  m.cookies["uuid"] = uuid
+  m.cookies["domain"] = "https://www.zattoo.com"
 
   ' todo: set lang in settings
   body = "client_app_token=" + transfer.Escape(m.token) + "&app_version=" + transfer.Escape(m.appVersion) + "&format=json&lang=de&uuid=" + transfer.Escape(uuid)
