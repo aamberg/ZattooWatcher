@@ -18,13 +18,11 @@ function runTest() as Void
   
   print "> [TEST] HttpManager created successfully"
   
-  ' Measure response time
   startTime = CreateObject("roTimespan")
   
-  ' Call getToken() via reflection (since it's a function on the component)
-  result = httpManager.GetToken()
+  result = httpManager.callFunc("getToken")
   
-  endTime = startTime.MilliTimestamp()
+  endTime = startTime.TotalMilliseconds()
   m.responseTimeMs = endTime
   
   print "> [TEST] getToken() returned: " + type(result)
@@ -32,14 +30,14 @@ function runTest() as Void
   if type(result) = "roAssociativeArray" then
     if result.success = true then
       m.resultSuccess = true
-      m.resultToken = result.token or ""
+      m.resultToken = result.token
       
       print "> [TEST] SUCCESS!"
       print "> [TEST] Token received: " + m.resultToken
       print "> [TEST] Response time: " + str(m.responseTimeMs) + "ms"
     else
       m.resultSuccess = false
-      m.resultError = result.error or "Unknown error"
+      m.resultError = result.error
       
       print "> [TEST] FAIL: getToken() returned success=false"
       print "> [TEST] Error: " + m.resultError
