@@ -5,16 +5,6 @@ Sub init()
     m.LiveStreamingBtn = m.top.findNode("LiveStreamingBtn")
     m.SettingsBtn = m.top.findNode("SettingsBtn")
     m.ClockTimer = m.top.findNode("ClockTimer")
-
-    ' TEMPORARY TEST: Run token endpoint test on startup
-    m.TestTokenTask = m.top.findNode("TestTokenTask")
-    if m.TestTokenTask <> invalid then
-        print "> [TEST] Starting token endpoint test..."
-        m.TestTokenTask.control = "RUN"
-        ' Observe results
-        m.TestTokenTask.observeField("resultSuccess", "onTestResult")
-        m.TestTokenTask.observeField("resultError", "onTestResult")
-    end if
     
     m.ClockLabel.drawingStyles = {
         "default": {
@@ -37,6 +27,17 @@ Sub init()
     m.LiveStreamingBtn.observeField("pressed", "onLiveStreamingPressed")
     m.SettingsBtn.observeField("pressed", "onSettingsPressed")
 End Sub
+
+function testTokenEndpoint() as Void
+    m.TestTokenTask = m.top.findNode("TestTokenTask")
+    if m.TestTokenTask <> invalid then
+        print "> [TEST] Starting token endpoint test..."
+        m.TestTokenTask.control = "RUN"
+        ' Observe results
+        m.TestTokenTask.observeField("resultSuccess", "onTestResult")
+        m.TestTokenTask.observeField("resultError", "onTestResult")
+    end if
+end function
 
 Function updateClock() As Void
     currentTime = CreateObject("roDateTime")
