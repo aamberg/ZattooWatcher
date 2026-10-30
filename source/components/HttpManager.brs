@@ -147,26 +147,14 @@ end function
 '=============================================================================
 
 function loadCookies() as Void
-  ' Load persisted cookies from drive:/session/cookies.json
-  sessionDir = CreateObject("roPath", "drive:/session/")
-  cookieFile = sessionDir.CreateObject("roPath", "cookies.json")
-  
+  cookieFile = "cachefs:/zattooWatcher/cookies.json"  
   readFile = CreateObject("roFileSystem")
   
   if readFile.Exists(cookieFile) then
-    fileHandle = readFile.Open(cookieFile, "r")
+    jsonString = ReadAsciiFile(cookieFile)
     
-    if fileHandle <> invalid then
-      jsonText = ""
-      jsonChunk = ""
-
-      while fileHandle.Read(jsonChunk) > 0
-        jsonText += jsonChunk
-      end while
-      
-      fileHandle.Close()
-
-      jsonData = ParseJson(jsonText)
+    if jsonString <> "" then
+      jsonData = ParseJson(jsonString)
       
       if type(jsonData) = "roAssociativeArray" then
         m.cookies = jsonData
@@ -178,22 +166,17 @@ function loadCookies() as Void
 end function
 
 function saveCookies() as Void
-  ' Save cookie jar to drive:/session/cookies.json
-  dirPath = CreateObject("roPath", "drive:/session/")
-  writeFile = CreateObject("roFileSystem")
-  writeFile.CreateDirectory(dirPath)
+  cookieFile = "cachefs:/zattooWatcher/cookies.json"  
+  jsonString = FormatJson(m.cookies)
   
-  cookieFile = dirPath.CreateObject("roPath", "cookies.json")
-  
-  fileHandle = writeFile.Open(cookieFile, "w")
-  
-  if fileHandle <> invalid then
-    jsonText = m.jsonToString(m.cookies)
+  if jsonString <> invalid then
+    success = WriteAsciiFile(cookieFile, jsonString)
+    if success then
+        print "> HttpManager: saved cookies to disk (" + cookieFile + ")"
+    else
+        print "> HttpManager: Error: Failed to write cookie file."
+    end if
     
-    fileHandle.Write(jsonText)
-    fileHandle.Close()
-    
-    print "> HttpManager: saved cookies to disk"
   end if
 end function
 
@@ -318,58 +301,38 @@ end function
 '=============================================================================
 
 function loadSession() as Void
-  ' Use drive:/ for persistent storage on Roku
-  sessionDir = CreateObject("roPath", "drive:/session/")
-  sessionFile = sessionDir.CreateObject("roPath", "session.json")
-  
+  sessionFile = "cachefs:/zattooWatcher/session.json"  
   readFile = CreateObject("roFileSystem")
   
   if readFile.Exists(sessionFile) then
-    fileHandle = readFile.Open(sessionFile, "r")
+    jsonString = ReadAsciiFile(sessionFile)
     
-    if fileHandle <> invalid then
-      jsonText = ""
-      jsonChunk = ""
-
-      while fileHandle.Read(jsonChunk) > 0
-        jsonText += jsonChunk
-      end while
-      
-      fileHandle.Close()
-
-      jsonData = ParseJson(jsonText)
+    if jsonString <> "" then
+      jsonData = ParseJson(jsonString)
       
       if type(jsonData) = "roAssociativeArray" then
         m.token = jsonData.token or ""
-        
+        m.powerGuideHash = jsonData.powerGuideHash or ""
         print "> HttpManager: loaded persisted session"
       end if
       
     end if
-    
-  end if
-  
+  end if  
 end function
 
-function saveSession(token as String) as Void
-  ' Ensure directory exists using roPath
-  dirPath = CreateObject("roPath", "drive:/session/")
+function saveSession() as Void
+  sessionFile = "cachefs:/zattooWatcher/session.json"
+  sessionData = { token: m.token, powerGuideHash: m.powerGuideHash }
+  jsonString = FormatJson(sessionData)
   
-  writeFile = CreateObject("roFileSystem")
-  writeFile.CreateDirectory(dirPath)
-  
-  sessionFile = dirPath.CreateObject("roPath", "session.json")
-  
-  fileHandle = writeFile.Open(sessionFile, "w")
-  
-  if fileHandle <> invalid then
-    sessionData = { token: token }
-    jsonText = m.jsonToString(sessionData)
+  if jsonString <> invalid then
+    success = WriteAsciiFile(sessionFile, jsonString)
+    if success then
+        print "> HttpManager: saved session to disk (" + sessionFile + ")"
+    else
+        print "> HttpManager: Error: Failed to write session file."
+    end if
     
-    fileHandle.Write(jsonText)
-    fileHandle.Close()
-    
-    print "> HttpManager: saved session to disk"
   end if
   
 end function
@@ -377,19 +340,19 @@ end function
 function clearSession() as Void
   m.cookies = {}
   m.token = ""
+  m.powerGuideHash = ""
   
   ' Remove persisted session file
-  sessionDir = CreateObject("roPath", "drive:/session/")
-  sessionFile = sessionDir.CreateObject("roPath", "session.json")
+  sessionFile = "cachefs:/zattooWatcher/session.json"
+  cookieFile = "cachefs:/zattooWatcher/cookies.json"
   
   deleteFile = CreateObject("roFileSystem")
+
   if deleteFile.Exists(sessionFile) then
     deleteFile.Delete(sessionFile)
     print "> HttpManager: cleared session from disk"
   end if
   
-  ' Remove persisted cookies file
-  cookieFile = sessionDir.CreateObject("roPath", "cookies.json")
   if deleteFile.Exists(cookieFile) then
     deleteFile.Delete(cookieFile)
     print "> HttpManager: cleared cookies from disk"
@@ -411,7 +374,7 @@ function getToken() as Object
     
     if type(jsonResponse) = "roAssociativeArray" and type(jsonResponse.token) = "roString" then
       m.token = jsonResponse.token
-      m.saveSession(m.token)
+      m.saveSession()
 
       print "> HttpManager: token fetched successfully"
       return { success: true, token: m.token }
