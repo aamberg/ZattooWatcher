@@ -3,6 +3,13 @@
 
 sub init() as Void
   m.port = createObject("roMessagePort")
+
+  m.transfer = CreateObject("roUrlTransfer")
+  m.transfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+  m.transfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+  m.transfer.InitClientCertificates()
+  m.transfer.SetPort(m.port)
+  
   m.cookies = {}
   
   m.defaultHeaders = {
@@ -33,51 +40,44 @@ end sub
 '=============================================================================
 
 function makeRequest(url as String, method as String, body as Object, headers as Object) as Object
-  transfer = CreateObject("roUrlTransfer")
   
-  if transfer = invalid then
+  if m.transfer = invalid then
     return { success: false, error: "Failed to create roUrlTransfer" }
   end if
   
-  transfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-  transfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
-  transfer.InitClientCertificates()
+  m.transfer.SetUrl(url)
   
-  transfer.SetUrl(url)
-  transfer.SetPort(m.port)
-  transfer.EnableCookies()
-
   print "> HttpManager: making request to '" + url + "'"
   print "> HttpManager: method: " + method
   if m.defaultHeaders <> invalid then
     for each key in m.defaultHeaders
-      transfer.AddHeader(key, m.defaultHeaders[key])
+      m.transfer.AddHeader(key, m.defaultHeaders[key])
     end for
   end if
   
   if headers <> invalid and type(headers) = "roAssociativeArray" then
     for each key in headers
-      transfer.AddHeader(key, headers[key])
+      m.transfer.AddHeader(key, headers[key])
     end for
   end if
   
-  addCookiesToRequest(transfer, url)
+  addCookiesToRequest(m.transfer, url)
   
   result = invalid
   
   if method = "GET" then
-    result = transfer.AsyncGetToString()
+    result = m.transfer.AsyncGetToString()
   else if method = "POST" then
     if body <> invalid and type(body) = "roString" then
       print "> HttpManager: making POST request with string body"
       print "> HttpManager: body: " + body
-      result = transfer.AsyncPostFromString(body)
+      result = m.transfer.AsyncPostFromString(body)
     else if body <> invalid and type(body) = "roAssociativeArray" then
       jsonBody = FormatJson(body)
-      transfer.AddHeader("Content-Type", "application/json")
+      m.transfer.AddHeader("Content-Type", "application/json")
       print "> HttpManager: making POST request with JSON body"
       print "> HttpManager: body: " + jsonBody
-      result = transfer.AsyncPostFromString(jsonBody)
+      result = m.transfer.AsyncPostFromString(jsonBody)
     else
       return { success: false, error: "Invalid body for POST request" }
     end if
@@ -86,8 +86,8 @@ function makeRequest(url as String, method as String, body as Object, headers as
   end if
   
   if result = false then
-    errorMsg = transfer.GetFailureString()
-    responseCode = transfer.GetResponseCode()
+    errorMsg = m.transfer.GetFailureString()
+    responseCode = m.transfer.GetResponseCode()
     print "> HttpManager: request failed for '" + url + "' - " + errorMsg
     return { success: false, error: errorMsg, code: responseCode }
   end if
@@ -96,14 +96,19 @@ function makeRequest(url as String, method as String, body as Object, headers as
   
   if type(msg) = "roUrlEvent" then
     responseCode = msg.GetResponseCode()
+
+    cookies = m.transfer.GetCookies("zattoo.com", "/")
+    for each cookiename in cookies
+      print "> HttpManager: received cookie: " + cookiename + "=" + cookies[cookiename]
+    end for
+
+    print "> HttpManager: Cookiesize for '" + url + "': " + str(cookies.count())
+
     content = msg.GetString()
     
     print "> HttpManager: GET/POST '" + url + "' returned code " + str(responseCode)
     
     if responseCode >= 200 and responseCode < 300 then
-      cookies = transfer.GetCookies("zattoo.com", "")
-      print "> HttpManager: Cookiesize for '" + url + "': " + str(cookies.count())
-
       parseSetCookieHeaders(msg, url)
       saveCookies()
     end if
@@ -368,7 +373,6 @@ function getToken() as Object
 end function
 
 function createSession() as Object
-  transfer = CreateObject("roUrlTransfer")
   url = "https://zattoo.com/zapi/v3/session/hello"
   uuid = generateUUIDv4()
   
@@ -379,7 +383,7 @@ function createSession() as Object
   m.cookies["domain"] = "https://www.zattoo.com"
 
   ' todo: set lang in settings
-  body = "client_app_token=" + transfer.Escape(m.token) + "&app_version=" + transfer.Escape(m.appVersion) + "&format=json&lang=de&uuid=" + transfer.Escape(uuid)
+  body = "client_app_token=" + m.transfer.Escape(m.token) + "&app_version=" + m.transfer.Escape(m.appVersion) + "&format=json&lang=de&uuid=" + m.transfer.Escape(uuid)
   
   result = makeRequestWithRetry(url, "POST", body, invalid)
   
@@ -399,16 +403,19 @@ function createSession() as Object
   
 end function
 
-function loginAccount(email as String, password as String) as Object
-  transfer = CreateObject("roUrlTransfer")
+function loginAccount() as Object
   url = "https://zattoo.com/zapi/v3/account/login"
+
+  email = ""
+  password = ""
   
-  body = "login=" + transfer.Escape(email) + "&password=" + transfer.Escape(password) + "&remember=true&format=json"
+  body = "login=" + m.transfer.Escape(email) + "&password=" + m.transfer.Escape(password) + "&remember=true&format=json"
   
-  result = m.makeRequestWithRetry(url, "POST", body, invalid)
+  result = makeRequestWithRetry(url, "POST", body, invalid)
   
   if result.success then
     jsonResponse = ParseJson(result.content)
+    print "> HttpManager: login result: " + result.content
     
     if type(jsonResponse) = "roAssociativeArray" and jsonResponse.active = true then
       m.powerGuideHash = jsonResponse.power_guide_hash or ""
@@ -418,7 +425,7 @@ function loginAccount(email as String, password as String) as Object
       
       print "> HttpManager: login successful"
         
-      return { success: true, loggedIn: true }
+      return { success: true, loggedIn: true, data: jsonResponse }
     else
       return { success: false, error: "Invalid login response", code: result.code }
     end if
@@ -452,11 +459,10 @@ function getChannelList() as Object
 end function
 
 function resolveStreamUrl(channelId as String) as Object
-  transfer = CreateObject("roUrlTransfer")
   url = "https://zattoo.com/zapi/watch"
   
   ' hls7 currently set as default. (maybe only hls7 is supported on roku?)
-  body = "https_watch_urls=true&stream_type=hls7&cid=" + transfer.Escape(channelId)
+  body = "https_watch_urls=true&stream_type=hls7&cid=" + m.transfer.Escape(channelId)
   
   result = m.makeRequestWithRetry(url, "POST", body, invalid)
   
