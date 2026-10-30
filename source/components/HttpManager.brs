@@ -193,7 +193,7 @@ function addCookiesToRequest(transfer as Object, url as String) as Void
     return
   end if
   
-  domain = m.extractDomain(url)
+  domain = extractDomain(url)
   
   cookieString = ""
   
@@ -298,39 +298,27 @@ end function
 '=============================================================================
 
 function loadSession() as Void
-  sessionFile = "cachefs:/zattooWatcher/session.json"  
-  readFile = CreateObject("roFileSystem")
-  
-  if readFile.Exists(sessionFile) then
-    jsonString = ReadAsciiFile(sessionFile)
-    
-    if jsonString <> "" then
-      jsonData = ParseJson(jsonString)
-      
-      if type(jsonData) = "roAssociativeArray" then
-        m.token = jsonData.token or ""
-        m.powerGuideHash = jsonData.powerGuideHash or ""
-        print "> HttpManager: loaded persisted session"
-      end if
-      
-    end if
-  end if  
+  registry = CreateObject("roRegistrySection", "Session")
+
+  if registry.Exists("deviceToken") then
+      m.token = registry.Read("deviceToken")
+  end if
+
+  if registry.Exists("powerGuideHash") then
+      m.powerGuideHash = registry.Read("powerGuideHash")
+  end if
+
+  print "> HttpManager: loaded persisted session from registry" 
+  print "> HttpManager: Token: " + m.token
+  print "> HttpManager: PowerGuideHash: " + m.powerGuideHash
 end function
 
 function saveSession() as Void
-  sessionFile = "cachefs:/zattooWatcher/session.json"
-  sessionData = { token: m.token, powerGuideHash: m.powerGuideHash }
-  jsonString = FormatJson(sessionData)
-  
-  if jsonString <> invalid then
-    success = WriteAsciiFile(sessionFile, jsonString)
-    if success then
-        print "> HttpManager: saved session to disk (" + sessionFile + ")"
-    else
-        print "> HttpManager: Error: Failed to write session file."
-    end if
-    
-  end if
+  registry = CreateObject("roRegistrySection", "Session")
+  registry.Write("deviceToken", m.token)
+  registry.Write("powerGuideHash", m.powerGuideHash)
+  registry.Flush()
+  print "> HttpManager: saved session to registry"
   
 end function
 
@@ -339,21 +327,26 @@ function clearSession() as Void
   m.token = ""
   m.powerGuideHash = ""
   
-  sessionFile = "cachefs:/zattooWatcher/session.json"
   cookieFile = "cachefs:/zattooWatcher/cookies.json"
   
   deleteFile = CreateObject("roFileSystem")
-
-  if deleteFile.Exists(sessionFile) then
-    deleteFile.Delete(sessionFile)
-    print "> HttpManager: cleared session from disk"
-  end if
   
   if deleteFile.Exists(cookieFile) then
     deleteFile.Delete(cookieFile)
     print "> HttpManager: cleared cookies from disk"
   end if
+
+  registrySession = CreateObject("roRegistrySection", "Session")
+
+  if registrySession.Exists("deviceToken") then
+      registrySession.Delete("deviceToken")
+  end if
+
+  if registrySession.Exists("powerGuideHash") then
+      registrySession.Delete("powerGuideHash")
+  end if
   
+  registrySession.Flush()
 end function
 
 '=============================================================================
