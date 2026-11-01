@@ -1,34 +1,80 @@
 Sub init()
-    m.ClockLabel = m.top.findNode("ClockLabel")
     m.LoginStatusCircle = m.top.findNode("LoginStatusCircle")
     m.LoginStatusLabel = m.top.findNode("LoginStatusLabel")
-    m.LiveStreamingBtn = m.top.findNode("LiveStreamingBtn")
-    m.SettingsBtn = m.top.findNode("SettingsBtn")
+    m.sidebarMenu = m.top.findNode("sidebarMenu")
+    m.timeLabel = m.top.findNode("timeLabel")
+    m.dateLabel = m.top.findNode("dateLabel")
     m.ClockTimer = m.top.findNode("ClockTimer")
     
-    m.ClockLabel.drawingStyles = {
+    m.timeLabel.drawingStyles = {
         "default": {
             "fontSize":124
             "color": "#36322E"
         }
     }
 
-    ' Set initial focus on Live Streaming button
-    m.LiveStreamingBtn.setFocus(true)
-
     ' Start clock updates
     m.ClockTimer.observeField("fire", "updateClock")
     m.ClockTimer.control = "start"
 
+    setupSidebar()
+    
+    m.sidebarMenu.setFocus(true)
+    m.sidebarMenu.observeField("itemSelected", "onMenuItemSelected")
+
     ' Read auth state from global node and update indicator
     'testEndpoints()
     updateLoginStatus()
-    CallApiAndReadCookies()
-
-    ' Observe button presses for navigation
-    m.LiveStreamingBtn.observeField("pressed", "onLiveStreamingPressed")
-    m.SettingsBtn.observeField("pressed", "onSettingsPressed")
+    'CallApiAndReadCookies()
 End Sub
+
+sub setupSidebar()
+    content = createObject("roSGNode", "ContentNode")
+    
+    item1 = content.createChild("ContentNode")
+    item1.title = "LIVE-TV"
+    item1.hdPosterUrl = "pkg:/images/icon_livetv.jpg"
+
+    item2 = content.createChild("ContentNode")
+    item2.title = "EPG"
+    item2.hdPosterUrl = "pkg:/images/icon_epg.jpg"
+
+    item3 = content.createChild("ContentNode")
+    item3.title = "SETTINGS"
+    item3.hdPosterUrl = "pkg:/images/icon_settings.jpg"
+
+    m.sidebarMenu.content = content
+end sub
+
+function onKeyEvent(key as String, press as Boolean) as Boolean
+    handled = false
+    if press
+        if key = "back"
+            ' Handle back navigation logic here
+            handled = true
+        end if
+    end if
+    return handled
+end function
+
+sub onMenuItemSelected()
+    selectedIndex = m.sidebarMenu.itemSelected
+    
+    print "Selected menu index: "; selectedIndex
+    
+    ' Handle navigation based on selection (0: LIVE-TV, 1: EPG, 2: SETTINGS)
+    if selectedIndex = 0
+        ' Navigate to Live TV scene
+        m.global.navigateToScene("LiveTVScene")
+    else if selectedIndex = 1
+        ' Navigate to EPG scene
+        m.global.navigateToScene("EPGScene")
+    else if selectedIndex = 2
+        ' Navigate to Settings scene
+        m.global.navigateToScene("SettingsScene")
+    end if
+
+end sub
 
 sub CallApiAndReadCookies()
     url = "https://zattoo.com/zapi/v3/session/hello"
@@ -116,7 +162,8 @@ Function updateClock() As Void
     if hours.Len() < 2 then hours = "0" + hours
     if minutes.Len() < 2 then minutes = "0" + minutes
 
-    m.ClockLabel.text = hours + ":" + minutes
+    m.timeLabel.text = hours + ":" + minutes
+    'm.dateLabel.text = currentTime.GetDateString("short-month")
 End Function
 
 Function updateLoginStatus() As Void
@@ -130,16 +177,6 @@ Function updateLoginStatus() As Void
         m.LoginStatusCircle.color = "0xFF0000FF"
         m.LoginStatusLabel.text = "Not logged in"
     end if
-End Function
-
-Function onLiveStreamingPressed() As Void
-    ' Navigate to HomeScene (live streaming)
-    m.top.browseTo("HomeScene")
-End Function
-
-Function onSettingsPressed() As Void
-    ' Navigate to Settings Scene
-    m.top.browseTo("SettingsScene")
 End Function
 
 ' TEMPORARY TEST: Handler for token endpoint test results

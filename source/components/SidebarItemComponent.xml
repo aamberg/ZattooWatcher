@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="SidebarItemComponent" extends="Group" xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd">
+    <interface>
+		<!-- bs:disable: 1067 functions are in CDATA -->
+		<field id = "itemContent" type = "node" onChange = "onItemContentChange" />
+        <field id="focusPercent" type="float" onChange="onFocusPercentChanged"/>
+		<!-- bs:enable: 1067 -->
+	</interface>
+    <script type="text/brightscript" uri="pkg:/components/SidebarItemComponent.brs" />
+
+    <children>
+        <!-- Item Highlight Background -->
+        <Rectangle 
+            id="itemHighlight" 
+            width="320" 
+            height="80" 
+            color="#3A3F47" 
+            opacity="0" />
+
+        <!-- Icon -->
+        <Poster 
+            id="itemIcon" 
+            width="40" 
+            height="40" 
+            translation="[20, 20]"
+            loadDisplayMode = "scaleToFit" />
+
+        <!-- Label -->
+        <Label 
+            id="itemLabel" 
+            font="font:MediumSystemFont" 
+            color="#A0A5AE" 
+            translation="[80, 20]" />
+    </children>
+
+</component>
