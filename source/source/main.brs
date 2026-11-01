@@ -17,7 +17,7 @@ sub Main()
         m.global.Model = 1
     end if
     
-    scene = screen.CreateScene("WelcomeScene")
+    scene = screen.CreateScene("MainScene")
     screen.show()
 
     while(true)
