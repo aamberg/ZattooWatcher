@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<component name="WelcomeScene" extends="Scene">
-	<script type="text/brightscript" uri="pkg:/components/WelcomeScene.brs"/>
+<component name="WelcomeScreen" extends="Group">
+	<script type="text/brightscript" uri="pkg:/components/WelcomeScreen.brs"/>
+
+    <interface>
+        <field id="navigationRequest" type="string" value="" />
+    </interface>
 
 <children>
         <!-- Background / Base Layout -->
