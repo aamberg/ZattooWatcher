@@ -9,150 +9,109 @@
 			id="Background"
 			width="1920"
 			height="1080"
-			color="0xD0CDC4FF">
+			color="#D0CDC4">
 		</Rectangle>
 
-		<!-- Title -->
-		<Label
-			id="TitleLabel"
-			text="Settings"
-			font="font:LargeBoldSystemFont"
-			size="[1920,60]"
-			color="0x36322E"
-			horizontalAlignment="center"
-			verticalAlignment="center"
-			translation="[805,40]">
-		</Label>
+        <!-- Zentrierter Login-Card-Container -->
+        <Group translation="[430, 120]">
+            <!-- Hintergrund-Box für das Formular -->
+            <Rectangle 
+                width="700" 
+                height="620" 
+                color="#2B2B2B" 
+                opacity="0.85" />
 
-		<!-- Tabs container -->
-		<Group id="TabsContainer" translation="[192,120]" translationFocus="[192,120]">
-			<Rectangle
-				id="TabBarBackground"
-				width="1536"
-				height="48"
-				color="0x36322ECC"> <!-- Semi-transparent dark -->
-			</Rectangle>
+            <!-- Titel: ANMELDEN -->
+            <Label 
+                text="ANMELDEN" 
+                font="font:LargeBoldSystemFont" 
+                color="#FFFFFF" 
+                width="700" 
+                horizAlign="center" 
+                translation="[0, 40]" />
 
-			<!-- Tab 1: Login & Session -->
-			<Button
-				id="LoginTabBtn"
-				text="User Settings"
-				font="font:SmallBoldSystemFont"
-				size="[500,48]"
-				color="0xFFFFFF"
-				focusRectColor="0x3399FF"
-				horizontalAlignment="center">
-			</Button>
+            <!-- Email Label -->
+            <Label 
+                text="Email" 
+                font="font:MediumSystemFont" 
+                color="#A0A5AE" 
+                translation="[60, 130]" />
 
-			<!-- Tab 2: Favorites (visible only when logged in) -->
-			<Button
-				id="FavoritesTabBtn"
-				text="Favorites"
-				font="font:SmallBoldSystemFont"
-				size="[500,48]"
-				color="0xFFFFFF"
-				focusRectColor="0x3399FF"
-				horizontalAlignment="center"
-				translation="[600,0]">
-			</Button>
-		</Group>
+            <!-- Email Input Field -->
+            <Group id="emailFieldGroup" translation="[60, 175]">
+                <Rectangle id="emailBg" width="580" height="60" color="#1F2227" />
+                <Rectangle id="emailBorder" width="580" height="60" color="#3A3F47" />
+                <Rectangle width="576" height="56" color="#1F2227" translation="[2, 2]" />
+                <Label id="emailText" text="email@example.com" font="font:MediumSystemFont" color="#70757E" translation="[20, 12]" />
+            </Group>
 
-		<!-- Tab content area -->
-		<Group id="TabContentContainer" translation="[192,180]" translationFocus="[192,180]">
-			<!-- Login & Session tab content -->
-			<Group id="LoginTabContent">
-				<Label
-					id="EmailLabel"
-					text="Email:"
-					font="font:SmallBoldSystemFont"
-					size="[400,32]"
-					color="0x36322E"
-					horizontalAlignment="left"
-					translation="[0,0]">
-				</Label>
+            <!-- Password Label -->
+            <Label 
+                text="Password" 
+                font="font:MediumSystemFont" 
+                color="#A0A5AE" 
+                translation="[60, 275]" />
 
-				<EditBox
-					id="EmailInput"
-					text=""
-					font="font:SmallBoldSystemFont"
-					size="[500,48]"
-					color="0x36322E"
-					horizontalAlignment="left"
-					translation="[0,40]">
-				</EditBox>
+            <!-- Password Input Field (Maskiert) -->
+            <Group id="passwordFieldGroup" translation="[60, 320]">
+                <Rectangle id="passwordBg" width="580" height="60" color="#1F2227" />
+                <Rectangle id="passwordBorder" width="580" height="60" color="#3A3F47" />
+                <Rectangle width="576" height="56" color="#1F2227" translation="[2, 2]" />
+                <Label id="passwordText" text="••••••••" font="font:MediumSystemFont" color="#70757E" translation="[20, 12]" />
+            </Group>
 
-				<Label
-					id="PasswordLabel"
-					text="Password:"
-					font="font:SmallBoldSystemFont"
-					size="[400,32]"
-					color="0x36322E"
-					horizontalAlignment="left"
-					translation="[0,120]">
-				</Label>
+            <!-- Log in Button -->
+            <Group id="loginButton" translation="[210, 450]">
+                <Rectangle id="buttonBg" width="280" height="60" color="#FFFFFF" />
+                <Label id="buttonText" text="Log in" font="font:MediumSystemFont" color="#2B2B2B" width="280" height="60" horizAlign="center" vertAlign="center" />
+            </Group>
+        </Group>
 
-				<EditBox
-					id="PasswordInput"
-					text=""
-					font="font:SmallBoldSystemFont"
-					size="[500,48]"
-					color="0x36322E"
-					horizontalAlignment="left"
-					isSecure = "true"
-					translation="[0,160]">
-				</EditBox>
+        <!-- Untere Tabs-Leiste -->
+        <Group translation="[0, 960]">
+            <!-- Tab-Leiste Hintergrund -->
+            <Rectangle 
+                width="1560" 
+                height="120" 
+                color="#1F2227" />
 
-				<!-- Save / Login button -->
-				<Button
-					id="SaveLoginBtn"
-					text="Login"
-					font="font:SmallBoldSystemFont"
-					size="[500,48]"
-					color="0xFFFFFF"
-					focusRectColor="0x3399FF"
-					horizontalAlignment="center"
-					translation="[0,240]">
-				</Button>
+            <!-- Tab Links: Login (Aktiv) -->
+            <Group translation="[0, 0]">
+                <Rectangle 
+                    width="780" 
+                    height="120" 
+                    color="#2B2B2B" 
+                    opacity="0.6" />
+                <!-- Aktiver Indikator (weißer Balken oben/unten) -->
+                <Rectangle 
+                    width="780" 
+                    height="4" 
+                    color="#FFFFFF" 
+                    translation="[0, 116]" />
+                <Button
+					id="LoginTabBtn"
+                    text="Login" 
+                    font="font:MediumSystemFont" 
+                    color="#FFFFFF" 
+                    width="780" 
+                    height="120" 
+                    horizAlign="center" 
+                    vertAlign="center" />
+            </Group>
 
-				<!-- Status label (hidden by default) -->
-				<Label
-					id="StatusLabel"
-					text=""
-					font="font:SmallBoldSystemFont"
-					size="[500,100]"
-					color="0x36322E"
-					horizontalAlignment="left"
-					wrap = "true"
-					visible = "false"
-					translation="[0,320]">
-				</Label>
-
-				<!-- Logout button (visible only when logged in) -->
-				<Button
-					id="LogoutBtn"
-					text="Logout"
-					font="font:SmallBoldSystemFont"
-					size="[500,48]"
-					color="0xFFFFFF"
-					focusRectColor="0xFF3333"
-					horizontalAlignment="center"
-					visible = "false"
-					translation="[0,420]">
-				</Button>
-			</Group>
-
-			<!-- Favorites tab content (placeholder for now) -->
-			<Group id="FavoritesTabContent" visible="false">
-				<Label
-					id="FavoritesPlaceholderLabel"
-					text="Favorites management coming soon."
-					font="font:SmallBoldSystemFont"
-					size="[500,48]"
-					color="0x36322E"
-					horizontalAlignment="left">
-				</Label>
-			</Group>
-		</Group>
+            <!-- Tab Rechts: Favoriten (Inaktiv) -->
+            <Group translation="[780, 0]">
+                <Button
+					id="FavoritesTabBtn"
+                    text="Favoriten" 
+                    font="font:MediumSystemFont" 
+                    color="#A0A5AE" 
+                    width="780" 
+                    height="120" 
+                    horizAlign="center" 
+                    vertAlign="center" />
+            </Group>
+        </Group>
 
 		<!-- Back button -->
 		<Button
@@ -160,10 +119,11 @@
 			text="Back to Welcome"
 			font="font:SmallBoldSystemFont"
 			size="[400,48]"
-			color="0xFFFFFF"
-			focusRectColor="0x3399FF"
+			color="#FFFFFF"
+			focusRectColor="#3399FF"
 			horizontalAlignment="center"
 			translation="[1520,1000]">
 		</Button>
+		<Node id="dialogPane" />
 	</children>
 </component>
