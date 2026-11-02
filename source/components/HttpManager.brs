@@ -403,12 +403,9 @@ function createSession() as Object
   
 end function
 
-function loginAccount() as Object
+function loginAccount(email as String, password as String) as Object
   url = "https://zattoo.com/zapi/v3/account/login"
 
-  email = ""
-  password = ""
-  
   body = "login=" + m.transfer.Escape(email) + "&password=" + m.transfer.Escape(password) + "&remember=true&format=json"
   
   result = makeRequestWithRetry(url, "POST", body, invalid)
@@ -434,6 +431,37 @@ function loginAccount() as Object
     return result
   end if
   
+end function
+
+function performLogin(email as String, password as String) as Object
+  print "> HttpManager: starting multi-step login flow"
+  
+  print "> HttpManager: step 1 - getting token"
+  tokenResult = getToken()
+  
+  if not tokenResult.success then
+    print "> HttpManager: failed to get token - " + tokenResult.error
+    return { success: false, error: "Failed to get authentication token", detail: tokenResult }
+  end if
+  
+  print "> HttpManager: step 2 - creating session"
+  sessionResult = createSession()
+  
+  if not sessionResult.success then
+    print "> HttpManager: failed to create session - " + sessionResult.error
+    return { success: false, error: "Failed to create session", detail: sessionResult }
+  end if
+  
+  print "> HttpManager: step 3 - logging in"
+  loginResult = loginAccount(email, password)
+  
+  if not loginResult.success then
+    print "> HttpManager: failed to login - " + loginResult.error
+    return { success: false, error: "Login failed", detail: loginResult }
+  end if
+  
+  print "> HttpManager: multi-step login flow completed successfully"
+  return { success: true, loggedIn: true, data: loginResult.data }
 end function
 
 function getChannelList() as Object
