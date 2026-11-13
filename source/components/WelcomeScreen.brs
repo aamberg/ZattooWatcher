@@ -167,16 +167,53 @@ Function updateClock() As Void
 End Function
 
 Function updateLoginStatus() As Void
-    loggedIn = m.global.loggedIn
+    loggedIn = checkSessionValidity()
+    
+    m.global.loggedIn = loggedIn
+    
     if loggedIn = true
-        ' Green circle, logged in text
-        m.LoginStatusCircle.color = "0x00FF00FF"
+        m.LoginStatusCircle.color = "#00FF00"
         m.LoginStatusLabel.text = "Logged in"
     else
-        ' Red circle, not logged in text
-        m.LoginStatusCircle.color = "0xFF0000FF"
+        m.LoginStatusCircle.color = "#FF0000"
         m.LoginStatusLabel.text = "Not logged in"
     end if
+End Function
+
+' @TODO move later to a separate zattoo session manager component, this is just a temporary implementation for testing
+Function checkSessionValidity() As Boolean
+    print "> WelcomeScreen: checking session validity..."
+    
+    sessionRegistry = CreateObject("roRegistrySection", "Session")
+    hasToken = false
+    hasPowerGuideHash = false
+    
+    if sessionRegistry.Exists("deviceToken") then
+        token = sessionRegistry.Read("deviceToken")
+        hasToken = (token <> "" and token <> invalid)
+    end if
+    
+    if sessionRegistry.Exists("powerGuideHash") then
+        powerGuideHash = sessionRegistry.Read("powerGuideHash")
+        hasPowerGuideHash = (powerGuideHash <> "" and powerGuideHash <> invalid)
+    end if
+    
+    print "> WelcomeScreen: Session - token present: " + str(hasToken) + ", powerGuideHash present: " + str(hasPowerGuideHash)
+    
+    cookiesRegistry = CreateObject("roRegistrySection", "Cookies")
+    cookieCount = 0
+    cookieKeys = cookiesRegistry.GetKeyList()
+    if cookieKeys <> invalid then
+        cookieCount = cookieKeys.Count()
+    end if
+    
+    print "> WelcomeScreen: Cookies registry - entries: " + str(cookieCount)
+    
+    isValid = hasToken and hasPowerGuideHash and cookieCount > 0
+    
+    print "> WelcomeScreen: session validity check result: " + str(isValid)
+    
+    return isValid
 End Function
 
 ' TEMPORARY TEST: Handler for token endpoint test results
