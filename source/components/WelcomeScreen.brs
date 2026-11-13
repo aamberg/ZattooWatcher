@@ -65,7 +65,7 @@ sub onMenuItemSelected()
     ' Handle navigation based on selection (0: LIVE-TV, 1: EPG, 2: SETTINGS)
     if selectedIndex = 0
         ' Navigate to Live TV scene
-        m.top.getScene().callFunc("showScreen", "HomeScreen")
+        m.top.navigationRequest = "HomeScreen"
     else if selectedIndex = 1
         ' Navigate to EPG scene
         'm.global.navigateToScene("EPGScene")

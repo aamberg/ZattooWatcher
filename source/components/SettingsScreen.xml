@@ -2,6 +2,10 @@
 
 <component name="SettingsScreen" extends="Group">
 	<script type="text/brightscript" uri="pkg:/components/SettingsScreen.brs"/>
+    
+    <interface>
+        <field id="navigationRequest" type="string" value="" />
+    </interface>
 
 	<children>
 		<!-- Background -->
@@ -65,6 +69,26 @@
                 <Rectangle id="buttonBg" width="280" height="60" color="#FFFFFF" />
                 <Label id="buttonText" text="Log in" font="font:MediumSystemFont" color="#2B2B2B" width="280" height="60" horizAlign="center" vertAlign="center" />
             </Group>
+
+            <!-- Log Out Button -->
+            <Group id="logoutButton" translation="[210, 450]" visible = "false">
+                <Rectangle id="buttonBg" width="280" height="60" color="#FFFFFF" />
+                <Label id="buttonText" text="Log Out" font="font:MediumSystemFont" color="#2B2B2B" width="280" height="60" horizAlign="center" vertAlign="center" />
+            </Group>
+
+            <!-- Status label (hidden by default) -->
+            <Label
+                id="statusLabel"
+                text=""
+                font="font:SmallBoldSystemFont"
+                size="[500,100]"
+                color="0x36322E"
+                horizontalAlignment="left"
+                wrap = "true"
+                visible = "false"
+                translation="[60,550]">
+            </Label>
+
         </Group>
 
         <!-- Untere Tabs-Leiste -->
@@ -118,11 +142,11 @@
 			id="BackBtn"
 			text="Back to Welcome"
 			font="font:SmallBoldSystemFont"
-			size="[400,48]"
+			size="[360,120]"
 			color="#FFFFFF"
 			focusRectColor="#3399FF"
 			horizontalAlignment="center"
-			translation="[1520,1000]">
+			translation="[1560,960]">
 		</Button>
 		<Node id="dialogPane" />
 	</children>
