@@ -16,7 +16,6 @@ sub showScreen(screenName as String)
 
     newScreen = createObject("roSGNode", screenName)
     
-    ' Observe the custom field coming from the child
     newScreen.observeField("navigationRequest", "onChildNavigationRequested")
 
     m.screenContainer.appendChild(newScreen)
@@ -26,7 +25,9 @@ end sub
 
 sub onChildNavigationRequested(event as Object)
     targetScreen = event.getData()
-    if targetScreen <> ""
+    if targetScreen = "pop"
+        popScreen()
+    else if targetScreen <> ""
         showScreen(targetScreen)
     end if
 end sub
@@ -40,6 +41,7 @@ sub popScreen()
         previousScreen = m.screenStack.peek()
         m.screenContainer.appendChild(previousScreen) 
         previousScreen.setFocus(true)
+        m.top.setFocus(true)
     end if
 end sub
 

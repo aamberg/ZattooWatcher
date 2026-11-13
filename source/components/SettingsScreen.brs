@@ -6,6 +6,8 @@ Sub init()
     m.emailFieldGroup = m.top.findNode("emailFieldGroup")
     m.passwordFieldGroup = m.top.findNode("passwordFieldGroup")
     m.loginButton = m.top.findNode("loginButton")
+    m.logoutButton = m.top.findNode("logoutButton")
+    m.statusLabel = m.top.findNode("statusLabel")
     
     m.emailText = m.top.findNode("emailText")
     m.passwordText = m.top.findNode("passwordText")
@@ -14,6 +16,7 @@ Sub init()
     m.buttonBg = m.top.findNode("buttonBg")
     m.buttonText = m.top.findNode("buttonText")
     
+    m.BackBtn = m.top.findNode("BackBtn")
     m.dialogPane = m.top.findNode("dialogPane")
     
     m.emailValue = ""
@@ -34,8 +37,7 @@ Sub init()
     ' Observe button presses
     'm.LoginTabBtn.observeField("pressed", "onLoginTabPressed")
     'm.FavoritesTabBtn.observeField("pressed", "onFavoritesTabPressed")
-    'm.LogoutBtn.observeField("pressed", "onLogoutPressed")
-    'm.BackBtn.observeField("pressed", "onBackPressed")
+    m.BackBtn.observeField("pressed", "onBackPressed")
 
     ' Observe auth state changes from global node
     m.global.observeField("loggedIn", "onAuthStateChanged")
@@ -173,12 +175,12 @@ Function updateLoginStatusUI() As Void
 
     if loggedIn = true then
         ' Show logout button, hide save/login button
-        'm.LogoutBtn.visible = true
+        m.logoutButton.visible = true
         m.loginButton.visible = false
         'm.FavoritesTabBtn.visible = true
     else
         ' Hide logout button, show save/login button
-        'm.LogoutBtn.visible = false
+        m.logoutButton.visible = false
         m.loginButton.visible = true
         'm.FavoritesTabBtn.visible = false
     end if
@@ -261,7 +263,7 @@ Function onLogoutPressed() As Void
 End Function
 
 Function onBackPressed() As Void
-    m.top.browseTo("WelcomeScene")
+    m.top.navigationRequest = "pop"
 End Function
 
 Function saveAuthData(email as String, password as String) As Void
@@ -290,13 +292,12 @@ Function clearAuthData() As Void
 End Function
 
 Function showStatus(message as String, success as Boolean) As Void
-    'm.StatusLabel.text = message
-    'm.StatusLabel.visible = true
+    m.statusLabel.text = message
+    m.statusLabel.visible = true
 
-    ' Green for success, red for error
     if success then
-        'm.StatusLabel.color = "0x00AA00"
+        m.statusLabel.color = "0x00AA00"
     else
-        'm.StatusLabel.color = "0xFF3333"
+        m.statusLabel.color = "0xFF3333"
     end if
 End Function
