@@ -197,14 +197,27 @@ function addCookiesToRequest(transfer as Object, url as String) as Void
   
   cookieString = ""
   
+  CookieTime = 0
+  realCookies = []
+
   for each name in m.cookies
+    if name = "pzuid" then
+      CookieTime = 1802779324
+    else
+      CookieTime = 0
+    end if
     cookieValue = m.cookies[name]
+    'cookieString += "zattoo.com	FALSE	/	TRUE	" + str(CookieTime) + "	" + name + "	" + cookieValue + "; "
     cookieString += name + "=" + cookieValue + "; "
+    tmpCookie = { Name: name, Value: cookieValue, Domain: "zattoo.com", Path: "/", Version: 1, Secure: true, Expires: CookieTime }
+    realCookies.push(tmpCookie)
   end for
   
   if cookieString <> "" then
     cookieString = trimRight(cookieString, "; ")
     transfer.AddHeader("Cookie", cookieString)
+    transfer.AddCookies(realCookies)
+    print "> HttpManager: added cookies to request for '" + url + "': " + cookieString
   end if
   
 end function
@@ -466,7 +479,7 @@ end function
 
 function getChannelList() as Object
   url = "https://zattoo.com/zapi/v2/cached/channels/" + m.powerGuideHash + "?details=False"
-  result = m.makeRequestWithRetry(url, "GET", invalid, invalid)
+  result = makeRequestWithRetry(url, "GET", invalid, invalid)
   
   if result.success then
     jsonResponse = ParseJson(result.content)
@@ -492,7 +505,7 @@ function resolveStreamUrl(channelId as String) as Object
   ' hls7 currently set as default. (maybe only hls7 is supported on roku?)
   body = "https_watch_urls=true&stream_type=hls7&cid=" + m.transfer.Escape(channelId)
   
-  result = m.makeRequestWithRetry(url, "POST", body, invalid)
+  result = makeRequestWithRetry(url, "POST", body, invalid)
   
   if result.success then
     jsonResponse = ParseJson(result.content)
