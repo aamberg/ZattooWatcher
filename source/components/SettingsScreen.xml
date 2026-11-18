@@ -16,8 +16,8 @@
 			color="#D0CDC4">
 		</Rectangle>
 
-        <!-- Zentrierter Login-Card-Container -->
-        <Group translation="[430, 120]">
+        <!-- Login Tab Content (visible by default) -->
+        <Group id="LoginTabContent" translation="[430, 120]">
             <!-- Hintergrund-Box für das Formular -->
             <Rectangle 
                 width="700" 
@@ -91,6 +91,42 @@
 
         </Group>
 
+        <!-- Favorites Tab Content (hidden by default) -->
+        <Group id="FavoritesTabContent" translation="[430, 120]" visible="false">
+            <!-- Background box for channel list -->
+            <Rectangle 
+                width="700" 
+                height="620" 
+                color="#2B2B2B" 
+                opacity="0.85" />
+
+            <!-- Title: FAVORITEN -->
+            <Label 
+                text="FAVORITEN" 
+                font="font:LargeBoldSystemFont" 
+                color="#FFFFFF" 
+                width="700" 
+                horizAlign="center" 
+                translation="[0, 40]" />
+
+            <!-- Status label for loading/error messages -->
+            <Label
+                id="favoritesStatusLabel"
+                text=""
+                font="font:SmallBoldSystemFont"
+                size="[600,100]"
+                color="#A0A5AE"
+                horizontalAlignment="center"
+                wrap = "true"
+                visible = "false"
+                translation="[50, 80]">
+            </Label>
+
+            <!-- Channel list container (channels added dynamically via BrightScript) -->
+            <Group id="channelListContainer" translation="[0, 120]">
+            </Group>
+        </Group>
+
         <!-- Untere Tabs-Leiste -->
         <Group translation="[0, 960]">
             <!-- Tab-Leiste Hintergrund -->
@@ -99,21 +135,19 @@
                 height="120" 
                 color="#1F2227" />
 
-            <!-- Tab Links: Login (Aktiv) -->
-            <Group translation="[0, 0]">
+            <Group id="LoginTabIndicator" translation="[0, 0]">
                 <Rectangle 
                     width="780" 
                     height="120" 
                     color="#2B2B2B" 
                     opacity="0.6" />
-                <!-- Aktiver Indikator (weißer Balken oben/unten) -->
                 <Rectangle 
                     width="780" 
                     height="4" 
                     color="#FFFFFF" 
                     translation="[0, 116]" />
                 <Button
-					id="LoginTabBtn"
+                    id="LoginTabBtn"
                     text="Login" 
                     font="font:MediumSystemFont" 
                     color="#FFFFFF" 
@@ -123,10 +157,19 @@
                     vertAlign="center" />
             </Group>
 
-            <!-- Tab Rechts: Favoriten (Inaktiv) -->
-            <Group translation="[780, 0]">
+            <Group id="FavoritesTabIndicator" translation="[780, 0]" visible="false">
+                <Rectangle 
+                    width="780" 
+                    height="120" 
+                    color="#2B2B2B" 
+                    opacity="0.6" />
+                <Rectangle 
+                    width="780" 
+                    height="4" 
+                    color="#FFFFFF" 
+                    translation="[0, 116]" />
                 <Button
-					id="FavoritesTabBtn"
+                    id="FavoritesTabBtn"
                     text="Favoriten" 
                     font="font:MediumSystemFont" 
                     color="#A0A5AE" 

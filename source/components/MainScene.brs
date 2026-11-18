@@ -42,6 +42,7 @@ sub popScreen()
         m.screenContainer.appendChild(previousScreen) 
         previousScreen.setFocus(true)
         m.top.setFocus(true)
+        print "> Screen popped. Current stack size: "; m.screenStack.count()
     end if
 end sub
 
