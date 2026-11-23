@@ -216,7 +216,7 @@ function addCookiesToRequest(transfer as Object, url as String) as Void
   if cookieString <> "" then
     cookieString = trimRight(cookieString, "; ")
     transfer.AddHeader("Cookie", cookieString)
-    transfer.AddCookies(realCookies)
+    'transfer.AddCookies(realCookies)
     print "> HttpManager: added cookies to request for '" + url + "': " + cookieString
   end if
   
@@ -274,7 +274,7 @@ function parseSingleSetCookie(setCookieValue as String, defaultDomain as String)
     
     ' lot of extra stuff, maybe for later use, but for now we just store the name/value pair
     for i = 2 to parts.count()
-      attr = trimLeft(trimRight(parts[i - 1], " "), " ").ToLower()
+      attr = LCase(trimLeft(trimRight(parts[i - 1], " "), " "))
       
       if attr = "domain" or Left(attr, 9) = "domain=" then
         domainValue = Mid(attr, 8)
@@ -428,10 +428,10 @@ function loginAccount(email as String, password as String) as Object
     print "> HttpManager: login result: " + result.content
     
     if type(jsonResponse) = "roAssociativeArray" and jsonResponse.active = true then
-      m.powerGuideHash = jsonResponse.power_guide_hash or ""
-      m.accountIsActive = jsonResponse.active or false
-      m.logoBaseUrl = jsonResponse.logo_base_url or "https://images.zattic.com/logos"
-      m.imageBaseUrl = jsonResponse.image_base_url or "https://images.zattic.com/cms"
+      m.powerGuideHash = jsonResponse.power_guide_hash
+      m.accountIsActive = jsonResponse.active
+      'm.logoBaseUrl = jsonResponse.logo_base_url or "https://images.zattic.com/logos"
+      'm.imageBaseUrl = jsonResponse.image_base_url or "https://images.zattic.com/cms"
       
       print "> HttpManager: login successful"
         
@@ -444,6 +444,22 @@ function loginAccount(email as String, password as String) as Object
     return result
   end if
   
+end function
+
+function performAuthLogin() as Object
+  registryAuth = CreateObject("roRegistrySection", "Auth")
+  email = registryAuth.Read("email")
+  password = registryAuth.Read("password")
+
+  result = performLogin(email, password)
+
+  if result.success then
+    saveSession()
+    saveCookies()
+  end if
+
+  return result
+
 end function
 
 function performLogin(email as String, password as String) as Object

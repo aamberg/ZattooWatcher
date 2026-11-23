@@ -3,7 +3,7 @@
 <!-- HttpManager: Central HTTP layer for Zattoo API communication -->
 <!-- Replaces UriFetcher with robust GET/POST, cookie handling, and session management -->
 
-<component name="HttpManager" extends="Node">
+<component name="HttpManager" extends="Task">
 
   <interface>
     <!-- Request methods -->
@@ -27,6 +27,7 @@
     <function name="loginAccount"/>
     <function name="getChannelList"/>
     <function name="resolveStreamUrl"/>
+    <function name="performAuthLogin"/>
   </interface>
 
   <script type="text/brightscript" uri="pkg:/components/HttpManager.brs"/>

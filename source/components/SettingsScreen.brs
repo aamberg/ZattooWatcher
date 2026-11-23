@@ -321,9 +321,9 @@ End Function
 
 Function addChannelToMasterList(channel as Object) As Void
     ' Extract essential channel info and store in master list
-    channelId = channel.id or ""
-    cid = channel.cid or channelId
-    title = channel.title or ""
+    channelId = channel.id
+    cid = channel.cid
+    title = channel.title
     
     if channelId <> "" and title <> "" then
         m.channels.push({id: channelId, cid: cid, title: title})
@@ -383,7 +383,10 @@ Function createChannelRow(channelId as String, title as String, yOffset as Integ
     rowButton.channelId = channelId
     
     ' Check if this channel is already a favorite and highlight it
-    isFavorite = m.favorites[channelId] or false
+    isFavorite = false
+    if m.favorites.Count() > 0
+        isFavorite = m.favorites.DoesExists(channelId)
+    end if
     
     if isFavorite then
         rowButton.color = "#FFFFFF"
