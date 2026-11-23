@@ -22,11 +22,25 @@ Sub init()
     m.sidebarMenu.setFocus(true)
     m.sidebarMenu.observeField("itemSelected", "onMenuItemSelected")
 
+    'login()
     ' Read auth state from global node and update indicator
     'testEndpoints()
     updateLoginStatus()
     'CallApiAndReadCookies()
+    'getChannelList()
+
 End Sub
+
+sub login()
+    httpManager = createObject("roSGNode", "HttpManager")
+    result = httpManager.callFunc("performAuthLogin")
+End sub
+
+sub getChannelList()
+    httpManager = createObject("roSGNode", "HttpManager")
+    result = httpManager.callFunc("getChannelList")
+
+End sub
 
 sub setupSidebar()
     content = createObject("roSGNode", "ContentNode")
@@ -198,7 +212,7 @@ Function checkSessionValidity() As Boolean
         hasPowerGuideHash = (powerGuideHash <> "" and powerGuideHash <> invalid)
     end if
     
-    print "> WelcomeScreen: Session - token present: " + str(hasToken) + ", powerGuideHash present: " + str(hasPowerGuideHash)
+    print "> WelcomeScreen: Session - token present: " + hasToken.ToStr() + ", powerGuideHash present: " + hasPowerGuideHash.ToStr()
     
     cookiesRegistry = CreateObject("roRegistrySection", "Cookies")
     cookieCount = 0
@@ -211,7 +225,7 @@ Function checkSessionValidity() As Boolean
     
     isValid = hasToken and hasPowerGuideHash and cookieCount > 0
     
-    print "> WelcomeScreen: session validity check result: " + str(isValid)
+    print "> WelcomeScreen: session validity check result: " + isValid.ToStr()
     
     return isValid
 End Function
