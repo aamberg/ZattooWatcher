@@ -28,6 +28,7 @@
     <function name="getChannelList"/>
     <function name="resolveStreamUrl"/>
     <function name="performAuthLogin"/>
+    <function name="getChannelListMock"/>
   </interface>
 
   <script type="text/brightscript" uri="pkg:/components/HttpManager.brs"/>

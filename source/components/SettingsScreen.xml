@@ -96,7 +96,7 @@
             <!-- Background box for channel list -->
             <Rectangle 
                 width="700" 
-                height="620" 
+                height="640" 
                 color="#2B2B2B" 
                 opacity="0.85" />
 
@@ -122,9 +122,19 @@
                 translation="[50, 80]">
             </Label>
 
-            <!-- Channel list container (channels added dynamically via BrightScript) -->
-            <Group id="channelListContainer" translation="[0, 120]">
-            </Group>
+            <!-- Scrollable channel list with virtualization for performance -->
+            <CheckList
+                id="channelList"
+                translation="[50, 120]"
+                width="700"
+                height="500"
+                numRows="7"
+                focusColor="#3399FF"
+                vertFocusAnimationStyle = "floatingFocus"
+                vertScroll="true">
+                <ContentNode id="channelListContent" role = "content" >
+                </ContentNode>
+            </CheckList>
         </Group>
 
         <!-- Untere Tabs-Leiste -->

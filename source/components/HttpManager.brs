@@ -665,3 +665,26 @@ function trimLeft(str as String, trimStr as String) as String
   return str
 
 end function
+
+' mocks are not included in github repo, but this function can be used to load a mock channel list for testing purposes
+function getChannelListMock() as Object
+  localFileBrowser = CreateObject("roFileSystem")
+  
+  if localFileBrowser.Exists("pkg://mocks/getChannelList.json") then
+    text = ReadAsciiFile("pkg://mocks/getChannelList.json")
+    jsonResponse = ParseJson(text)
+
+    if type(jsonResponse) = "roAssociativeArray" and jsonResponse.success = true then
+      print "> HttpManager: channel list fetched successfully"
+
+      return { success: true, channels: jsonResponse.channel_groups }
+    else
+      return { success: false, error: "Invalid channel list response", code: 1 }
+    end if
+
+    
+  else
+    return { success: false, error: "File not found", code: 2 }
+  end if
+  
+end function

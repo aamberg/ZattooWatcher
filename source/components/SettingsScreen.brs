@@ -20,7 +20,8 @@ Sub init()
     ' Find UI nodes - Favorites tab content
     m.FavoritesTabContent = m.top.findNode("FavoritesTabContent")
     m.favoritesStatusLabel = m.top.findNode("favoritesStatusLabel")
-    m.channelListContainer = m.top.findNode("channelListContainer")
+    m.channelList = m.top.findNode("channelList")
+    m.channelListContent = m.top.findNode("channelListContent")
     
     ' Find UI nodes - Tab indicators and buttons
     m.LoginTabBtn = m.top.findNode("LoginTabBtn")
@@ -43,6 +44,7 @@ Sub init()
     
     ' Channel list and favorites data
     m.channels = []
+    m.checkIdToCid = []
     m.favorites = {}
     
     ' Load persisted credentials and auth state
@@ -78,22 +80,22 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     handled = false
     
     if press
-        if key = "down"
+        if key = "down" and m.activeTab = 0
             if m.focusIndex < 2
                 m.focusIndex = m.focusIndex + 1
                 updateFocus()
                 handled = true
             end if
-        else if key = "up"
+        else if key = "up" and m.activeTab = 0
             if m.focusIndex > 0
                 m.focusIndex = m.focusIndex - 1
                 updateFocus()
                 handled = true
             end if
-        else if key = "right"
+        else if key = "right" and m.activeTab = 0
            onFavoritesTabPressed()
            handled = true
-        else if key = "OK"
+        else if key = "OK" and m.activeTab = 0
             if m.focusIndex = 0
                 openTextInputDialog("Email eingeben", m.emailValue, "email")
                 handled = true
@@ -241,6 +243,7 @@ Function switchToTab(tabIndex as Integer) As Void
         m.FavoritesTabBtn.color = "#FFFFFF"
         
         m.FavoritesTabBtn.setFocus(true)
+        m.channelList.setFocus(true)
         
         ' Fetch channels when switching to Favorites tab for the first time or if empty
         loadChannelsAndFavorites()
@@ -260,7 +263,6 @@ End Function
 '=============================================================================
 
 Function loadChannelsAndFavorites() As Void
-    ' Load persisted favorites first
     loadFavorites()
     httpManager = createObject("roSGNode", "HttpManager")
     
@@ -269,25 +271,18 @@ Function loadChannelsAndFavorites() As Void
         buildChannelListUI()
         return
     end if
-    
-    ' Show loading status
+
     showFavoritesStatus("Loading channels...", true)
     
     print "> SettingsScreen: fetching channel list from Zattoo API"
-    
-    
-    ' Fetch channel list via HttpManager
+
     result = httpManager.callFunc("getChannelList")
     
     if result.success then
         print "> SettingsScreen: channel list fetched successfully"
         
-        ' Parse and store channels from response
         parseChannelGroups(result.channels)
-        
-        ' Build the UI for channel selection
         buildChannelListUI()
-        
         hideFavoritesStatus()
     else
         print "> SettingsScreen: failed to fetch channel list - " + result.error
@@ -306,7 +301,6 @@ Function parseChannelGroups(channelGroups as Object) As Void
                     addChannelToMasterList(channel)
                 end for
             else if type(group) = "roAssociativeArray" then
-                ' Single channel object without wrapper array
                 addChannelToMasterList(group)
             end if
         next
@@ -320,10 +314,9 @@ Function parseChannelGroups(channelGroups as Object) As Void
 End Function
 
 Function addChannelToMasterList(channel as Object) As Void
-    ' Extract essential channel info and store in master list
-    channelId = channel.id
-    cid = channel.cid
-    title = channel.title
+    channelId = channel.id.Trim()
+    cid = channel.cid.Trim()
+    title = channel.title.Trim()
     
     if channelId <> "" and title <> "" then
         m.channels.push({id: channelId, cid: cid, title: title})
@@ -331,8 +324,8 @@ Function addChannelToMasterList(channel as Object) As Void
 End Function
 
 Function buildChannelListUI() As Void
-    ' Clear existing channel list UI
-    clearChannelListContainer()
+    m.channelList.content = invalid
+    m.checkIdToCid.clear()
     
     if m.channels.count() = 0 then
         showFavoritesStatus("No channels available.", false)
@@ -341,84 +334,50 @@ Function buildChannelListUI() As Void
     
     print "> SettingsScreen: building channel list UI with " + str(m.channels.count()) + " channels"
     
-    yOffset = 0
-    maxChannelsVisible = 8 ' Limit visible channels to fit the screen
+    ' Create content node for the List
+    content = createObject("roSGNode", "ContentNode")
+    favoriteCheckedState = []
     
     for each channel in m.channels
-        if yOffset > 520 then ' Stop adding more channels if they won't fit
-            exit for
-        end if
-        
         channelId = channel.id
         title = channel.title
         
-        ' Create a row for this channel with checkbox and label
-        createChannelRow(channelId, title, yOffset)
+        isFavorite = false
+        if m.favorites.Count() > 0 and m.favorites[channelId] <> invalid then
+            isFavorite = true
+            
+        end if
+
+        favoriteCheckedState.push(isFavorite)
+        m.checkIdToCid.push(channelId)
         
-        yOffset = yOffset + 50 ' Space between rows (checkbox height + gap)
+        ' Create content node for each channel row
+        channelNode = createObject("roSGNode", "ContentNode")
+        channelNode.TITLE = title
+        content.appendChild(channelNode)
     next
+    
+    m.channelList.content = content
+    m.channelList.checkedState = favoriteCheckedState
+    
+    ' Observe selection events from the List
+    m.channelList.observeField("itemSelected", "onChannelSelected")
     
     print "> SettingsScreen: built UI for " + str(m.channels.count()) + " channels"
 End Function
 
-Function clearChannelListContainer() As Void
-    while m.channelListContainer.getChildCount() > 0
-        child = m.channelListContainer.removeChild(0)
-    end while
-End Function
+Function onChannelSelected(event as Object) As Void
+    for i = 0 to m.channelList.checkedState.count() - 1
+        channelId = m.checkIdToCid[i]
+        isChecked = false
+        if m.channelList.checkedState[i] then
+            isChecked = true
+        end if
 
-Function createChannelRow(channelId as String, title as String, yOffset as Integer) As Void
-    ' Create a button for this channel row (interactive)
-    rowButton = createObject("roSGNode", "Button")
-    rowButton.translation = "[0, " + str(yOffset) + "]"
-    rowButton.width = 700
-    rowButton.height = 45
-    rowButton.horizAlign = "left"
-    rowButton.vertAlign = "center"
-    rowButton.color = "#FFFFFF"
-    rowButton.text = title
-    rowButton.font = "font:MediumSystemFont"
-    
-    ' Store channel ID in button for identification on click
-    rowButton.channelId = channelId
-    
-    ' Check if this channel is already a favorite and highlight it
-    isFavorite = false
-    if m.favorites.Count() > 0
-        isFavorite = m.favorites.DoesExists(channelId)
-    end if
-    
-    if isFavorite then
-        rowButton.color = "#FFFFFF"
-        rowButton.text = "✓ " + title
-    else
-        rowButton.color = "#A0A5AE"
-    end if
-    
-    ' Observe button press to toggle favorite status
-    rowButton.observeField("pressed", "onChannelRowPressed")
-    
-    m.channelListContainer.appendChild(rowButton)
-End Function
+        m.favorites[channelId] = isChecked
+    next
 
-Function toggleFavorite(channelId as String) As Void
-    if m.favorites[channelId] then
-        m.favorites[channelId] = false
-    else
-        m.favorites[channelId] = true
-    end if
-    
-    ' Persist favorites to storage
     saveFavorites()
-End Function
-
-Function onChannelRowPressed(event as Object) As Void
-    button = event.getRoSGNode()
-    channelId = button.channelId
-    
-    print "> SettingsScreen: toggling favorite for channel " + channelId
-    toggleFavorite(channelId)
-    buildChannelListUI()
 End Function
 
 Function loadFavorites() As Void
@@ -441,13 +400,11 @@ End Function
 Function saveFavorites() As Void
     registry = CreateObject("roRegistrySection", "Favorites")
     
-    ' Clear all existing keys first
     keyList = registry.GetKeyList()
     for each key in keyList
         registry.Delete(key)
     end for
     
-    ' Write current favorites
     for each channelId in m.favorites
         if m.favorites[channelId] then
             registry.Write(channelId, "true")
